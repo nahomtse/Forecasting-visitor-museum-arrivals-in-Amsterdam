@@ -1,3 +1,4 @@
+#NOTE THAT THE CODE IS THE SAME FOR EACH POI, ONLY THE PARAMETERS DIFFERS BUT CAN BE FOUND IN THE REPORT. 
 ###############################################   import packages  ################################################
 import pandas as pd 
 import numpy as np 
