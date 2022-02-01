@@ -1,4 +1,4 @@
-#import packages
+###############################################   import packages  ################################################
 import pandas as pd 
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -12,8 +12,8 @@ from tensorflow import keras
 from sklearn.metrics import r2_score
 import random
 random.seed(10)
-#import data and formulate train and test length
-df = pd.read_excel('/Users/nahomtsehaie/documents/21069_attractiesnahom.xlsx', sheet_name = 'Blad8' , )
+#########################  import data and formulate train and test length ################################## 
+df = pd.read_excel('/Users/nahomtsehaie/documents/21069_attractiesnahom.xlsx', sheet_name = 'Eye Film museum monthly' , )
 SD = 0.8 #split data in trainingdata and testdata 
 df = df[['date', 'Count']]
 df.replace("", float("NaN"), inplace=True)
@@ -21,26 +21,16 @@ df = df.dropna()
 train = df[['Count']]
 test = df[['Count']]
 trainlength = int(np.round(SD*len(df)))
-#trainlength_new = int(np.round(trainlength*0.8)) #1168
 train=df[0:trainlength] 
 test=df[trainlength:]
-
 
 #change data in proper dataframe and plot timeseries model as well the train en test length
 df.Timestamp = pd.to_datetime(df.date,format='%d-%m-%Y') 
 df.index = df.Timestamp 
-#df = df.resample('D').mean()
-#df= df.interpolate(method='linear')
 train.Timestamp = pd.to_datetime(train.date,format='%d-%m-%Y') 
 train.index = train.Timestamp 
-#train = train.resample('D').mean()
-#train= train.interpolate(method='linear')
-
 test.Timestamp = pd.to_datetime(test.date,format='%d-%m-%Y') 
 test.index = test.Timestamp 
-#test = test.resample('D').mean()
-#test= test.interpolate(method='linear')
-
 
 #df.Count.plot(figsize=(15,8), title= 'Visitors Eye filmmuseum 2017-2020', fontsize=14)
 plt.figure(figsize=(16,8))
@@ -51,11 +41,8 @@ plt.xlabel ('date')
 plt.legend(loc='best')
 plt.title("Train and Test data monthly Eye filmmuseum 2017-2020 ")
 plt.show()
-
-
-#######################################  NAIVE MODEL  ####################################################
-
-# naivemodel yhat_t+1 = y_t
+#######################################  NAIVE MODEL  ###################################################
+# naivemodel
 dd= np.asarray(train.Count)
 y_hat = test.copy()
 y_hat['naive'] = dd[len(dd)-1]
@@ -69,16 +56,11 @@ plt.xlabel ('date')
 plt.title("Naive Forecast Monthly Eye Film Museum")
 plt.show()
 
-#rmse_NM_TD = sqrt(mean_squared_error(train['Count'], y_hat['naive']))
-#mape_NM_TD = np.round(np.mean(np.abs(train['Count']-y_hat['naive'])/train['Count'])*100,2)
-#does this make sense for TD? 
-
 rmse_NM = sqrt(mean_squared_error(test['Count'], y_hat['naive']))
 mape_NM = np.round(np.mean(np.abs(test['Count']-y_hat['naive'])/test['Count'])*100,2)
 print(rmse_NM)
 print(mape_NM)
 #######################################  SES MODEL   ####################################################
-
 #SES (Simple Exponential Smoothing) #0.9 is parameter 
 from statsmodels.tsa.api import SimpleExpSmoothing, Holt, ExponentialSmoothing
 y_hat_avg = test.copy()
@@ -98,20 +80,10 @@ rmse_SES = sqrt(mean_squared_error(test.Count, y_hat_avg.SES))
 mape_SES = np.round(np.mean(np.abs(test['Count']-y_hat_avg['SES'])/test['Count'])*100,2)
 print(rmse_SES)
 print(mape_SES)
-
-# It requires a single parameter, called alpha (a),
-# also called the smoothing factor or smoothing coefficient.
-# This parameter controls the rate at which 
-# the influence of the observations at prior time steps decay 
-# exponentially. Alpha is often set to a value between 0 and 1. 
-# Large values mean that the model pays attention mainly to the
-# most recent past observations, whereas smaller values mean more 
-# of the history is taken into account when making a prediction.
-
 #######################################  HOLT Double MODEL   ####################################################
 #HLTM (Holt’s Linear Trend method)
-#y_hat_avg = test.copy()
-fit12 = Holt(np.asarray(train['Count'])).fit(smoothing_level = 0.1,smoothing_trend = 0.5 , optimized= True)
+y_hat_avg = test.copy()
+fit12 = Holt(np.asarray(train['Count'])).fit(smoothing_level = 0.1,smoothing_trend = 0.5 , optimized= False)
 y_hat_avg['Holt_linear'] = fit12.forecast(len(test))
 plt.figure(figsize=(16,8))
 plt.plot(train['Count'], label='Train')
@@ -127,12 +99,9 @@ rmse_HLTM = sqrt(mean_squared_error(test.Count, y_hat_avg.Holt_linear))
 mape_HLTM = np.round(np.mean(np.abs(test['Count']-y_hat_avg['Holt_linear'])/test['Count'])*100,2)
 print(rmse_HLTM)
 print(mape_HLTM)
-
-#######################################  HOLT Triple MODEL   ####################################################
-
+#######################################  HOLT Triple MODEL (HWES)   ####################################################
 #HLTM (Holt’s Linear Trend method)
-
-# y_hat_avg = test.copy()
+y_hat_avg = test.copy()
 fit1 = ExponentialSmoothing(np.asarray(train['Count']) ,seasonal_periods=12 ,trend='mul', seasonal='mul',).fit()
 y_hat_avg['Holt_Winter'] = fit1.forecast(len(test))
 plt.figure(figsize=(16,8))
@@ -149,19 +118,15 @@ rmse_HWTM = sqrt(mean_squared_error(test.Count, y_hat_avg.Holt_Winter))
 mape_HWTM = np.round(np.mean(np.abs(test['Count']-y_hat_avg['Holt_Winter'])/test['Count'])*100,2)
 print(rmse_HWTM)
 print(mape_HWTM)
-############################################################################
-
-  #non stationarity check ADF
+################################## non stationarity check ADF & KPSS ##########################################
+#non stationarity check ADF
 from statsmodels.tsa.stattools import adfuller
 from numpy import log
-asdf = df['Count'].diff()
 result = adfuller(df['Count'])
 print('ADF Statistic: %f' % result[0])
 print('p-value: %f' % result[1])
-  #p value = 0.2547 -> so it is non stationair. we have to differnece it
 
-
-  #non stationarity check KPSS 
+#non stationarity check KPSS 
 from statsmodels.tsa.stattools import kpss
 def kpss_test(series, **kw):    
       statistic, p_value, n_lags, critical_values = kpss(series, **kw)
@@ -179,40 +144,10 @@ kpss_test(df['Count'])
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 plot_acf(train['Count'])
 plot_pacf(train['Count'])
-
-############################################################################
-
-  #non stationarity check ADF
-from statsmodels.tsa.stattools import adfuller
-asdf = train['Count'].diff()
-result = adfuller(asdf)
-print('ADF Statistic: %f' % result[0])
-print('p-value: %f' % result[1])
-  #p value = 0.2547 -> so it is non stationair. we have to differnece it
-
-
-  #non stationarity check KPSS 
-from statsmodels.tsa.stattools import kpss
-def kpss_test(series, **kw):    
-      statistic, p_value, n_lags, critical_values = kpss(series, **kw)
-      # Format Output
-      print(f'KPSS Statistic: {statistic}')
-      print(f'p-value: {p_value}')
-      print(f'num lags: {n_lags}')     
-      print('Critial Values:')
-      for key, value in critical_values.items():
-          print(f'   {key} : {value}')
-      print(f'Result: The series is {"not " if p_value < 0.05 else ""}stationary')
-
-kpss_test(asdf)
-
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-plot_acf(asdf)
-plot_pacf(train[asdf])
 #########################################   ARMA  ##################################################
-####check nar die asdf en order en trainlength
+##ARMA model
 from statsmodels.tsa.arima.model import ARIMA
-#y_hat_avg = test.copy()
+y_hat_avg = test.copy()
 model = ARIMA(train['Count'], order=(5, 0, 1))
 model_fit = model.fit()
 #print(model_fit.summary())
@@ -232,12 +167,10 @@ rmse_ARMA = sqrt(mean_squared_error(test.Count, y_hat_avg.ARMA))
 mape_ARMA = np.round(np.mean(np.abs(test['Count']-y_hat_avg['ARMA'])/test['Count'])*100,2)
 print(rmse_ARMA)
 print(mape_ARMA)
-
 ######################################   ARIMA   ####################################################
-####check nar die asdf en order en trainlength
+#ARIMA
 from statsmodels.tsa.arima.model import ARIMA
-
-#y_hat_avg = test.copy()
+y_hat_avg = test.copy()
 model = ARIMA(train['Count'], order=(5, 1, 1))
 model_fit = model.fit()
 #print(model_fit.summary())
@@ -259,9 +192,9 @@ print(rmse_ARIMA)
 print(mape_ARIMA)
 
 ######################################   SARIMA  ##################################################
-####check nar die asdf en order en trainlength
+#SARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
-#y_hat_avg = test.copy()
+y_hat_avg = test.copy()
 model = SARIMAX(train['Count'], order=(5, 0, 1), seasonal_order=(7,0,1,12))
 model_fit = model.fit(disp=False)
 #print(model_fit.summary())
@@ -282,30 +215,26 @@ mape_SARIMA = np.round(np.mean(np.abs(test['Count']-y_hat_avg['SARIMA'])/test['C
 print(rmse_SARIMA)
 print(mape_SARIMA)
 
-
-###########################AUTO ARIMA ##########################################
+######################################  AUTO ARIMA #####################################################
 from statsmodels.tsa.arima_model import ARIMA
 import pmdarima as pm
 
-model = pm.auto_arima(train['Count'], start_p=1, start_q=1,
+model = pm.auto_arima(train['Count'], start_p=0, start_q=0,
                       test='adf',       # use adftest to find optimal 'd'
-                      max_p=3, max_q=3, # maximum p and q
+                      max_p=6, max_q=6, # maximum p and q
                       m=4,              # frequency of series
                       d=0,           # let model determine 'd'
-                      seasonal=True,   # No Seasonality
+                      seasonal=True,   # Seasonality
                       start_P=1, 
                       D=0, 
                       start_Q = 1,
-                      max_Q = 3,
-                      max_P = 3,
+                      max_Q = 6,
+                      max_P = 6,
                       trace=True,
                       error_action='ignore',  
                       suppress_warnings=True, 
                       stepwise=True)
-
-
 print(model.summary())
-
 ########################################  Neural Network #######################################################################
 #reshape input and outout   
 def training_data(X, y, time_steps=1):
@@ -315,20 +244,15 @@ def training_data(X, y, time_steps=1):
         Xs.append(v)        
         ys.append(y.iloc[i + time_steps])
     return np.array(Xs), np.array(ys)
-
-time_steps = 4 #make prediction on the past weeks (= 10 weeks?). This generates including lag differences. 
+time_steps = 4 #make prediction on the past months. This generates including lag differences. 
 train = train[['Count']]
 test = test[['Count']]
-
 # reshape to [samples, time_steps, n_features]
 X_train, y_train = training_data(train, train.Count, time_steps)
 x_test, y_test = training_data(test, test.Count, time_steps)
-
 print(X_train.shape, y_train.shape)
 print(x_test.shape, y_test.shape)
-
-#
-#######################################################################################################################
+##########################################  LSTM model defined #########################################################
 #vanilla lstm  (= Create LSTMs with 1 layer and input is units hidden neurons)
 def model_vLSTM(units):
     model = keras.Sequential()
@@ -342,7 +266,7 @@ def model_vLSTM(units):
     model.add(keras.layers.Dense(1))
     model.compile(loss='mse', optimizer='adam')
     return model
-###################################   Train network #########################################
+###################################   Train network & Prediction #########################################
 #train network 
 def fit_model(model):
     early_stop = keras.callbacks.EarlyStopping(
@@ -357,8 +281,14 @@ def fit_model(model):
         shuffle = False,  #order sequence is important
         callbacks = [early_stop])
     return history
-
-########################################################################################################################
+  
+def prediction(model, x_test, y_test):
+    y_pred = model.predict(x_test)
+    y_train_inv = y_train.reshape(1, -1)
+    y_test_inv = y_test.reshape(1, -1)
+    y_pred_inv = y_pred
+    return y_pred, y_pred_inv, y_train_inv, y_test_inv  
+##################################   plot loss & forecast & test vs prediction   ################################
 def plot_loss (history, model_name):
     plt.figure(figsize = (8, 4))
     plt.plot(history.history['loss'], color = 'blue', label='Train Loss')
@@ -368,13 +298,6 @@ def plot_loss (history, model_name):
     plt.xlabel('epoch')
     plt.legend(loc='upper right')
     plt.show()
-
-def prediction(model, x_test, y_test):
-    y_pred = model.predict(x_test)
-    y_train_inv = y_train.reshape(1, -1)
-    y_test_inv = y_test.reshape(1, -1)
-    y_pred_inv = y_pred
-    return y_pred, y_pred_inv, y_train_inv, y_test_inv
 
 def plot_forecast(prediction_model, y_test, model_name):
     y_pred, y_pred_inv, y_train_inv, y_test_inv = prediction_model
@@ -454,19 +377,4 @@ plot_loss(history_vLSTM_n64, 'vLSTM_n64')
 plot_forecast(prediction_vLSTM_n64, y_test, 'vLSTM_n64')
 plot_compare(prediction_vLSTM_n64, y_test, 'vLSTM_n64')
 evaluate_performance(prediction_vLSTM_n64, y_test, 'vLSTM_n64')
-########################################################################################################################
-
-plt.figure(figsize=(18,8))
-plt.plot( train['Count'], label='Train')
-plt.plot(test['Count'], label='Test')
-plt.plot(y_hat.index,y_hat['naive'], label='Naive model Forecast')
-plt.plot(y_hat_avg['SES'], label='SES')
-plt.plot(y_hat_avg['ARMA'], label='ARMA')
-plt.plot(y_hat_avg['ARIMA'], label='ARIMA')
-#plt.plot(y_hat_avg['SARIMA'], label='SARIMA')
-plt.plot(y_hat_avg['Holt_linear'], label='Holt_linear')
-plt.plot(y_hat_avg['Holt_Winter'], label='Holt_Winter')
-# plot_forecast(prediction_vLSTM_n4, y_test, 'vLSTM_n4')
-plt.legend(loc='best')
-plt.title("All plots ")
-plt.show()
+#######################################################  END #################################################################
