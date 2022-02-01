@@ -14,7 +14,7 @@ from sklearn.metrics import r2_score
 import random
 random.seed(10)
 #########################  import data and formulate train and test length ################################## 
-df = pd.read_excel('/Users/nahomtsehaie/documents/21069_attractiesnahom.xlsx', sheet_name = 'Eye Film museum monthly' , )
+df = pd.read_excel('/Users/nahomtsehaie/documents/attractiesnahom.xlsx', sheet_name = 'Eye Film monthly' , )
 SD = 0.8 #split data in trainingdata and testdata 
 df = df[['date', 'Count']]
 df.replace("", float("NaN"), inplace=True)
